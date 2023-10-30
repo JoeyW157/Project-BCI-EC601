@@ -1,0 +1,49 @@
+% Basic setup 
+clc; close all; clear;
+
+% Load the datamatrix with 160Hz and downsample it to 125Hz using a default
+% Antialiasing Lowpass Filter: https://www.mathworks.com/help/signal/ref/resample.html#mw_7adbf990-9b5e-4677-ac50-8997f886114c
+folder_path = "/projectnb/ece601/A2_EEGbased_BCI/S001_clean";
+S001_C1C2_datamatrix = readmatrix(folder_path+"/S001_C1C2_datamatrix.csv");
+S001_C3C4_datamatrix = readmatrix(folder_path+"/S001_C3C4_datamatrix.csv");
+S001_eyeclose_C0 = readmatrix(folder_path+"/S001_eyeclose_C0.csv");
+S001_eyeopen_C0 = readmatrix(folder_path+"/S001_eyeopen_C0.csv");
+
+[P, Q] = rat(125/160);  % Calculate the rational fraction for resampling
+numChannels = size(S001_C1C2_datamatrix, 2);  % Number of columns/signals
+S001_C1C2_125hz = zeros(size(S001_C1C2_datamatrix, 1) * P / Q, numChannels);  % Preallocate for efficiency
+S001_C3C4_125hz = zeros(size(S001_C3C4_datamatrix, 1) * P / Q, numChannels);
+S001_eyeclose_C0_125hz = zeros(size(S001_eyeclose_C0, 1) * P / Q, numChannels);
+S001_eyeopen_C0_125hz = zeros(size(S001_eyeopen_C0, 1) * P / Q, numChannels);
+
+
+for i = 1:numChannels
+    S001_C1C2_125hz(:, i) = resample(S001_C1C2_datamatrix(:, i), P, Q);
+    S001_C3C4_125hz(:, i) = resample(S001_C3C4_datamatrix(:, i), P, Q);
+    S001_eyeclose_C0_125hz(:, i) = resample(S001_eyeclose_C0(:, i), P, Q);
+    S001_eyeopen_C0_125hz(:, i) = resample(S001_eyeopen_C0(:, i), P, Q);
+end
+
+% round the downsampled class labels
+
+S001_C1C2_125hz(:, numChannels) = round(S001_C1C2_125hz(:, numChannels));
+S001_C3C4_125hz(:, numChannels) = round(S001_C3C4_125hz(:, numChannels));
+S001_eyeclose_C0_125hz(:, numChannels) = round(S001_eyeclose_C0_125hz(:, numChannels));
+S001_eyeopen_C0_125hz(:, numChannels) = round(S001_eyeopen_C0_125hz(:, numChannels));
+
+% resample massed up C3C4, fixing it here
+for i = 2:size(S001_C3C4_125hz,1)-1
+    temp1 = S001_C3C4_125hz(i-1,numChannels);
+    temp2 = S001_C3C4_125hz(i,numChannels);
+    temp3 = S001_C3C4_125hz(i+1,numChannels);
+    if ~(temp2 == 3 || temp2 == 4)
+        S001_C3C4_125hz(i,numChannels) = 0;
+    else if (temp2 == 3 && temp1 == 4) || (temp2 == 3 && temp3 == 4)
+            
+end
+
+writematrix(S001_C1C2_125hz,folder_path+"/S001_C1C2_125hz.csv");
+writematrix(S001_C3C4_125hz,folder_path+"/S001_C3C4_125hz.csv");
+writematrix(S001_eyeclose_C0_125hz,folder_path+"/S001_eyeclose_C0_125hz.csv");
+writematrix(S001_eyeopen_C0_125hz,folder_path+"/S001_eyeopen_C0_125hz.csv");
+
